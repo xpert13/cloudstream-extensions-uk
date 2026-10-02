@@ -1,8 +1,8 @@
 {
-    "name": "CakesTwix Providers Repository Codeberg",
-    "description": "Cloudstream Ukraine Plugin Repository",
+    "name": "CakesTwix Providers (xpert13 fork)",
+    "description": "Cloudstream Ukraine Plugin Repository — fork for testing",
     "manifestVersion": 1,
     "pluginLists": [
-      "https://raw.githubusercontent.com/CakesTwix/cloudstream-extensions-uk/refs/heads/builds/plugins.json"
+      "https://raw.githubusercontent.com/xpert13/cloudstream-extensions-uk/refs/heads/builds/plugins.json"
     ]
 }
