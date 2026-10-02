@@ -1,0 +1,80 @@
+name: Build
+
+# Port of .forgejo/workflows/build.yml to GitHub Actions.
+# Forgejo resolves third-party actions by full URL and runs debian-latest;
+# GitHub uses short action names and ubuntu-latest.
+#
+# Requires the `builds` branch to already exist in this repository — it is
+# checked out below and force-pushed to. A fresh fork of this repo does not
+# have it; create it once as an orphan branch before the first run.
+
+concurrency:
+  group: "build"
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      # choose your default branch
+      - master
+      - main
+    paths-ignore:
+      - '*.md'
+  # Allows triggering a rebuild by hand from the Actions tab
+  workflow_dispatch:
+
+# The "Push builds" step writes to the builds branch with GITHUB_TOKEN
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: "src"
+
+      - name: Checkout builds
+        uses: actions/checkout@v4
+        with:
+          ref: "builds"
+          path: "builds"
+
+      - name: Clean old builds
+        run: rm $GITHUB_WORKSPACE/builds/*.cs3 || true
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: 'temurin'
+          cache: gradle
+          cache-dependency-path: src/**/*.gradle*
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          # android-35 matches compileSdkVersion in the root build.gradle.kts
+          packages: 'platform-tools platforms;android-35'
+
+      - name: Build Plugins
+        # GITHUB_REPOSITORY is set automatically, so setRepo() in
+        # build.gradle.kts points every plugin URL at this repository.
+        run: |
+          cd $GITHUB_WORKSPACE/src
+          ./gradlew make makePluginsJson
+          cp */build/*.cs3 $GITHUB_WORKSPACE/builds
+          cp build/plugins.json $GITHUB_WORKSPACE/builds
+
+      - name: Push builds
+        run: |
+          cd $GITHUB_WORKSPACE/builds
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add .
+          # Amend so the builds branch keeps a single commit instead of
+          # growing a binary blob per build
+          git commit --amend -m "Build $GITHUB_SHA" || exit 0   # do not error if nothing to commit
+          git push --force

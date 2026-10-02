@@ -1,0 +1,33 @@
+name: Pull Request
+
+# Port of .forgejo/workflows/pr.yml to GitHub Actions.
+# Build-only check: it compiles every plugin but publishes nothing.
+
+on:
+  pull_request:
+    paths-ignore:
+      - "*.md"
+
+jobs:
+  pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: "temurin"
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          # android-35 matches compileSdkVersion in the root build.gradle.kts
+          packages: 'platform-tools platforms;android-35'
+
+      - name: Build Plugins
+        run: |
+          ./gradlew make makePluginsJson
