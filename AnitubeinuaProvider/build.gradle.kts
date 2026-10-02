@@ -22,7 +22,7 @@ cloudstream {
      * 2: Slow
      * 3: Beta only
      * */
-    status = 3 // will be 3 if unspecified
+    status = 1 // 1 = Ok (upstream ships 3 = Beta only; revert before an upstream PR)
     tvTypes = listOf(
         "Anime",
         "AnimeMovie",
